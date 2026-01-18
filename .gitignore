@@ -1,0 +1,10 @@
+﻿################################################################################
+# 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
+################################################################################
+
+/.vs
+/网站自动化发布-1.自动更新SVN/.vs
+/网站自动化发布-1.自动更新SVN/AutoSvnUpdate/.vs/AutoSvnUpdate
+/网站自动化发布-1.自动更新SVN/AutoSvnUpdate/bin/Debug
+/网站自动化发布-1.自动更新SVN/AutoSvnUpdate/obj
+/网站自动化发布-1.自动更新SVN/AutoSvnUpdate/App.config
