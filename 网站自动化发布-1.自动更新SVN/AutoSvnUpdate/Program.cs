@@ -13,9 +13,6 @@ namespace AutoSvnUpdate {
                 Console.WriteLine("正在更新 D:\\QXYSVN\\trunk\\...");
                 if (UpdateSvnDirectory("D:\\QXYSVN\\trunk\\")) {
                     Console.WriteLine("更新truck成功");
-                    // 停留10秒钟，让更新完成
-                    Console.WriteLine("等待10秒钟以确保更新完成...");
-                    Thread.Sleep(10000);
                 } else {
                     Console.WriteLine("更新truck失败");
                     WaitForUserConfirmation();
@@ -26,9 +23,6 @@ namespace AutoSvnUpdate {
                 Console.WriteLine("正在更新 D:\\QXYSVN\\database scripts\\19buy...");
                 if (UpdateSvnDirectory("D:\\QXYSVN\\database scripts\\19buy")) {
                     Console.WriteLine("更新scripts成功");
-                    // 停留10秒钟，让更新完成
-                    Console.WriteLine("等待10秒钟以确保更新完成...");
-                    Thread.Sleep(10000);
                 } else {
                     Console.WriteLine("更新scripts失败");
                     WaitForUserConfirmation();
