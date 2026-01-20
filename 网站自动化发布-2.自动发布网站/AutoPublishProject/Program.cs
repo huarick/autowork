@@ -44,7 +44,7 @@ namespace AutoPublishProject
                 Console.WriteLine("=======================================");
                 Console.WriteLine("开始执行第2步: 重命名文件夹");
                 Console.WriteLine("=======================================");
-                // 5. 创建新文件夹
+                // 5. 重命名文件夹
                 RenameDeploymentFolder(svnVersion, maxScriptNumber);
 
                 Console.WriteLine("自动化发布流程执行完成！");
