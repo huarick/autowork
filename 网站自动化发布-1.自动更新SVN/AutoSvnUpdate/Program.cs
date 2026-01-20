@@ -32,9 +32,8 @@ namespace AutoSvnUpdate {
                 Console.WriteLine("=============SVN更新结束==================");
             } catch (Exception ex) {
                 Console.WriteLine($"错误：{ex.Message}");
-            } finally {
-                WaitForUserConfirmation();
-            }
+                Console.ReadLine();
+            } 
         }
         
         static bool UpdateSvnDirectory(string directory) {
