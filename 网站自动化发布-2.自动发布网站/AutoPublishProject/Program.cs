@@ -36,13 +36,13 @@ namespace AutoPublishProject
                 Console.WriteLine($"最大脚本编号: {maxScriptNumber}");
 
                 Console.WriteLine("=======================================");
-                Console.WriteLine("开始执行第4步: 发布网站");
+                Console.WriteLine("开始执行第1步: 发布网站");
                 Console.WriteLine("=======================================");
                 // 4. 发布网站
                 PublishWebsite();
 
                 Console.WriteLine("=======================================");
-                Console.WriteLine("开始执行第5步: 创建新文件夹");
+                Console.WriteLine("开始执行第2步: 重命名文件夹");
                 Console.WriteLine("=======================================");
                 // 5. 创建新文件夹
                 RenameDeploymentFolder(svnVersion, maxScriptNumber);
@@ -396,7 +396,7 @@ namespace AutoPublishProject
             Console.WriteLine("开始构建和发布网站...");
 
             string projectPath = @"D:\QXYSVN\trunk\Qxy.PdmPortal\Qxy.Pdm.PortalWeb\Qxy.Pdm.PortalWeb.csproj";
-            string publishProfilePath = @"D:\QXYSVN\trunk\Qxy.PdmPortal\Qxy.Pdm.PortalWeb\Properties\PublishProfiles\产品子系统发布配置.pubxml";
+            string publishProfilePath = @"d:\Rick\自动化项目\网站自动化发布-2.自动发布网站\TestPublishProfile.pubxml";
             string msbuildPath = @"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe";
             bool hasError = false;
 
@@ -439,7 +439,8 @@ namespace AutoPublishProject
                 if (Environment.UserInteractive)
                 {
                     // 设置5秒超时
-                    Console.WriteLine("(5秒后自动继续...)");
+                    Console.WriteLine("发布网站有错，请确认...");
+                    Console.ReadLine();
                     Task.Delay(5000).Wait();
                     Console.WriteLine("超时，自动继续...");
                 }
@@ -493,6 +494,10 @@ namespace AutoPublishProject
                         using (Process process = Process.Start(psi)) {
                             Console.WriteLine("MSBuild命令已启动，等待执行完成...");
                             
+                            // 异步读取输出流，避免死锁
+                            var outputTask = process.StandardOutput.ReadToEndAsync();
+                            var errorTask = process.StandardError.ReadToEndAsync();
+                            
                             // 设置超时时间为10分钟
                             if (!process.WaitForExit(600000)) {
                                 Console.WriteLine("MSBuild命令执行超时，已终止");
@@ -501,9 +506,9 @@ namespace AutoPublishProject
                             } else {
                                 Console.WriteLine($"MSBuild命令执行完成，退出代码: {process.ExitCode}");
                                 
-                                // 读取输出流
-                                string output = process.StandardOutput.ReadToEnd();
-                                string errorOutput = process.StandardError.ReadToEnd();
+                                // 等待输出读取完成
+                                string output = outputTask.Result;
+                                string errorOutput = errorTask.Result;
                                 
                                 if (process.ExitCode != 0) {
                                     Console.WriteLine($"发布失败: {errorOutput}");
@@ -564,20 +569,27 @@ namespace AutoPublishProject
             Console.WriteLine("========================================");
 
             string deploymentDir = @"D:\QXYSVN\trunk\deployment\Qxy.PdmPortalWeb_deploy";
+            string deployDir = Path.Combine(deploymentDir, "Deploy");
             string currentDate = DateTime.Now.ToString("yyyyMMdd");
             string solutionName = "Qxy.PdmPortal";
             string newFolderName = $"{currentDate}_{solutionName}_{svnVersion}_{maxScriptNumber}";
             string newFolderPath = Path.Combine(deploymentDir, newFolderName);
             bool hasError = false;
 
-            Console.WriteLine($"开始创建新文件夹...");
+            Console.WriteLine($"开始重命名文件夹...");
             Console.WriteLine($"基础目录: {deploymentDir}");
+            Console.WriteLine($"Deploy目录: {deployDir}");
             Console.WriteLine($"新文件夹: {newFolderPath}");
 
-            // 检查基础文件夹是否存在
+            // 检查基础文件夹和Deploy文件夹是否存在
             if (!Directory.Exists(deploymentDir))
             {
                 Console.WriteLine($"基础文件夹不存在: {deploymentDir}");
+                hasError = true;
+            }
+            else if (!Directory.Exists(deployDir))
+            {
+                Console.WriteLine($"Deploy目录不存在: {deployDir}");
                 hasError = true;
             }
 
@@ -602,53 +614,29 @@ namespace AutoPublishProject
 
                     if (!hasError)
                     {
-                        // 创建新文件夹
+                        // 直接重命名Deploy文件夹为新的文件夹名称
                         try
                         {
-                            Directory.CreateDirectory(newFolderPath);
-                            Console.WriteLine("文件夹创建完成");
+                            Console.WriteLine($"开始重命名Deploy文件夹为: {newFolderName}");
+                            Directory.Move(deployDir, newFolderPath);
+                            Console.WriteLine("文件夹重命名完成");
 
-                            // 复制Deploy目录中的文件到新文件夹
-                            string deployDir = Path.Combine(deploymentDir, "Deploy");
-                            Console.WriteLine($"Deploy目录路径: {deployDir}");
-                            Console.WriteLine($"Deploy目录是否存在: {Directory.Exists(deployDir)}");
+                            // 检查新文件夹中的文件数量
+                            int newFileCount = Directory.GetFiles(newFolderPath, "*", SearchOption.AllDirectories).Length;
+                            Console.WriteLine($"新文件夹中的文件数量: {newFileCount}");
 
-                            if (Directory.Exists(deployDir))
-                            {
-                                Console.WriteLine($"开始复制Deploy目录中的文件到新文件夹...");
-                                Console.WriteLine($"Deploy目录中的文件数量: {Directory.GetFiles(deployDir, "*", SearchOption.AllDirectories).Length}");
-
-                                try
-                                {
-                                    CopyDirectory(deployDir, newFolderPath);
-                                    Console.WriteLine("文件复制完成");
-
-                                    // 检查新文件夹中的文件数量
-                                    int newFileCount = Directory.GetFiles(newFolderPath, "*", SearchOption.AllDirectories).Length;
-                                    Console.WriteLine($"新文件夹中的文件数量: {newFileCount}");
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"复制文件失败: {ex.Message}");
-                                    hasError = true;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Deploy目录不存在: {deployDir}");
-                                hasError = true;
-                            }
+                            // 不需要创建新的Deploy文件夹，因为MSBuild会在发布时自动创建
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"创建文件夹失败: {ex.Message}");
+                            Console.WriteLine($"重命名文件夹失败: {ex.Message}");
                             hasError = true;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"创建文件夹时出现异常: {ex.Message}");
+                    Console.WriteLine($"重命名文件夹时出现异常: {ex.Message}");
                     hasError = true;
                 }
             }
@@ -661,8 +649,8 @@ namespace AutoPublishProject
                 if (Environment.UserInteractive)
                 {
                     // 设置5秒超时
-                    Console.WriteLine("(5秒后自动继续...)");
-                    Task.Delay(5000).Wait();
+                    Console.WriteLine("重命名发布目录有错，请确认...");
+                    Console.ReadLine();
                     Console.WriteLine("超时，自动继续...");
                 }
                 else
