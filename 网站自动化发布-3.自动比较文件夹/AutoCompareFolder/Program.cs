@@ -5,97 +5,6 @@ using System.Linq;
 
 namespace AutoCompareFolder {
     internal class Program {
-        // 比较两个文件夹中的文件并复制不同的文件到结果文件夹
-        static void CompareAndCopyFiles(string targetFolder, string previousFolder, string resultFolder) {
-            Console.WriteLine("开始比较文件...");
-            int copiedCount = 0;
-            int totalFiles = 0;
-            
-            // 遍历目标文件夹中的所有文件
-            foreach (string targetFile in Directory.GetFiles(targetFolder, "*", SearchOption.AllDirectories)) {
-                totalFiles++;
-                // 计算相对路径
-                string relativePath = targetFile.Substring(targetFolder.Length).TrimStart('\\');
-                string previousFile = Path.Combine(previousFolder, relativePath);
-                
-                // 检查文件是否在历史文件夹中存在
-                bool fileExistsInPrevious = File.Exists(previousFile);
-                bool filesAreDifferent = false;
-                
-                if (fileExistsInPrevious) {
-                    // 文件存在，比较内容
-                    filesAreDifferent = !FilesAreEqual(targetFile, previousFile);
-                    
-                    // 对于App_global.asax.compiled文件，添加详细的日志输出
-                    if (relativePath.Contains("App_global.asax.compiled")) {
-                        Console.WriteLine($"详细比较：{relativePath}");
-                        Console.WriteLine($"  目标文件：{targetFile}");
-                        Console.WriteLine($"  历史文件：{previousFile}");
-                        Console.WriteLine($"  文件大小相同：{new FileInfo(targetFile).Length == new FileInfo(previousFile).Length}");
-                        Console.WriteLine($"  文件内容不同：{filesAreDifferent}");
-                    }
-                }
-                
-                // 只有当文件不存在于历史文件夹或文件内容不同时，才复制到结果文件夹
-                if (!fileExistsInPrevious || filesAreDifferent) {
-                    string resultFile = Path.Combine(resultFolder, relativePath);
-                    
-                    // 确保结果文件夹的目录结构存在
-                    string resultDir = Path.GetDirectoryName(resultFile);
-                    if (!Directory.Exists(resultDir)) {
-                        Directory.CreateDirectory(resultDir);
-                    }
-                    
-                    // 复制文件到结果文件夹
-                    File.Copy(targetFile, resultFile, true);
-                    copiedCount++;
-                    
-                    if (!fileExistsInPrevious) {
-                        Console.WriteLine($"复制新文件：{relativePath}");
-                    } else {
-                        Console.WriteLine($"复制修改的文件：{relativePath}");
-                    }
-                }
-            }
-            
-            Console.WriteLine($"文件比较完成，共检查 {totalFiles} 个文件，复制 {copiedCount} 个文件到结果文件夹");
-        }
-        
-        // 比较两个文件的内容是否相同（使用快速二进制比较）
-        static bool FilesAreEqual(string file1, string file2) {
-            // 检查文件是否存在
-            if (!File.Exists(file1) || !File.Exists(file2)) {
-                return false;
-            }
-            
-            using (FileStream fs1 = new FileStream(file1, FileMode.Open, FileAccess.Read)) {
-                using (FileStream fs2 = new FileStream(file2, FileMode.Open, FileAccess.Read)) {
-                    if (fs1.Length != fs2.Length) {
-                        return false;
-                    }
-                    
-                    byte[] buffer1 = new byte[4096];
-                    byte[] buffer2 = new byte[4096];
-                    int bytesRead;
-                    
-                    while ((bytesRead = fs1.Read(buffer1, 0, buffer1.Length)) > 0) {
-                        int bytesRead2 = fs2.Read(buffer2, 0, bytesRead);
-                        if (bytesRead != bytesRead2) {
-                            return false;
-                        }
-                        
-                        for (int i = 0; i < bytesRead; i++) {
-                            if (buffer1[i] != buffer2[i]) {
-                                return false;
-                            }
-                        }
-                    }
-                    
-                    return true;
-                }
-            }
-        }
-        
         static void Main(string[] args) {
             try {
                 string sourceBasePath = "D:\\QXYSVN\\trunk\\deployment\\Qxy.PdmPortalWeb_deploy\\";
@@ -293,5 +202,97 @@ namespace AutoCompareFolder {
                 Console.ReadKey();
             }
         }
+
+        // 比较两个文件夹中的文件并复制不同的文件到结果文件夹
+        static void CompareAndCopyFiles(string targetFolder, string previousFolder, string resultFolder) {
+            Console.WriteLine("开始比较文件...");
+            int copiedCount = 0;
+            int totalFiles = 0;
+
+            // 遍历目标文件夹中的所有文件
+            foreach (string targetFile in Directory.GetFiles(targetFolder, "*", SearchOption.AllDirectories)) {
+                totalFiles++;
+                // 计算相对路径
+                string relativePath = targetFile.Substring(targetFolder.Length).TrimStart('\\');
+                string previousFile = Path.Combine(previousFolder, relativePath);
+
+                // 检查文件是否在历史文件夹中存在
+                bool fileExistsInPrevious = File.Exists(previousFile);
+                bool filesAreDifferent = false;
+
+                if (fileExistsInPrevious) {
+                    // 文件存在，比较内容
+                    filesAreDifferent = !FilesAreEqual(targetFile, previousFile);
+
+                    // 对于App_global.asax.compiled文件，添加详细的日志输出
+                    if (relativePath.Contains("App_global.asax.compiled")) {
+                        Console.WriteLine($"详细比较：{relativePath}");
+                        Console.WriteLine($"  目标文件：{targetFile}");
+                        Console.WriteLine($"  历史文件：{previousFile}");
+                        Console.WriteLine($"  文件大小相同：{new FileInfo(targetFile).Length == new FileInfo(previousFile).Length}");
+                        Console.WriteLine($"  文件内容不同：{filesAreDifferent}");
+                    }
+                }
+
+                // 只有当文件不存在于历史文件夹或文件内容不同时，才复制到结果文件夹
+                if (!fileExistsInPrevious || filesAreDifferent) {
+                    string resultFile = Path.Combine(resultFolder, relativePath);
+
+                    // 确保结果文件夹的目录结构存在
+                    string resultDir = Path.GetDirectoryName(resultFile);
+                    if (!Directory.Exists(resultDir)) {
+                        Directory.CreateDirectory(resultDir);
+                    }
+
+                    // 复制文件到结果文件夹
+                    File.Copy(targetFile, resultFile, true);
+                    copiedCount++;
+
+                    if (!fileExistsInPrevious) {
+                        Console.WriteLine($"复制新文件：{relativePath}");
+                    } else {
+                        Console.WriteLine($"复制修改的文件：{relativePath}");
+                    }
+                }
+            }
+
+            Console.WriteLine($"文件比较完成，共检查 {totalFiles} 个文件，复制 {copiedCount} 个文件到结果文件夹");
+        }
+
+        // 比较两个文件的内容是否相同（使用快速二进制比较）
+        static bool FilesAreEqual(string file1, string file2) {
+            // 检查文件是否存在
+            if (!File.Exists(file1) || !File.Exists(file2)) {
+                return false;
+            }
+
+            using (FileStream fs1 = new FileStream(file1, FileMode.Open, FileAccess.Read)) {
+                using (FileStream fs2 = new FileStream(file2, FileMode.Open, FileAccess.Read)) {
+                    if (fs1.Length != fs2.Length) {
+                        return false;
+                    }
+
+                    byte[] buffer1 = new byte[4096];
+                    byte[] buffer2 = new byte[4096];
+                    int bytesRead;
+
+                    while ((bytesRead = fs1.Read(buffer1, 0, buffer1.Length)) > 0) {
+                        int bytesRead2 = fs2.Read(buffer2, 0, bytesRead);
+                        if (bytesRead != bytesRead2) {
+                            return false;
+                        }
+
+                        for (int i = 0; i < bytesRead; i++) {
+                            if (buffer1[i] != buffer2[i]) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                }
+            }
+        }
+
     }
 }

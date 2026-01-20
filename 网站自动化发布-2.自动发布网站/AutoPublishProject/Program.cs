@@ -618,9 +618,41 @@ namespace AutoPublishProject
                         try
                         {
                             Console.WriteLine($"开始重命名Deploy文件夹为: {newFolderName}");
-                            Directory.Move(deployDir, newFolderPath);
-                            Console.WriteLine("文件夹重命名完成");
-
+                            
+                            // 尝试释放可能的文件锁定
+                            Console.WriteLine("尝试释放文件锁定...");
+                            System.Threading.Thread.Sleep(2000); // 等待2秒，让可能的进程释放锁定
+                            
+                            // 尝试重命名，最多重试3次
+                            int retryCount = 0;
+                            const int maxRetries = 3;
+                            bool renameSuccess = false;
+                            
+                            while (retryCount < maxRetries && !renameSuccess)
+                            {
+                                try
+                                {
+                                    Directory.Move(deployDir, newFolderPath);
+                                    renameSuccess = true;
+                                    Console.WriteLine("文件夹重命名完成");
+                                }
+                                catch (IOException ex)
+                                {
+                                    retryCount++;
+                                    Console.WriteLine($"重命名失败 (尝试 {retryCount}/{maxRetries}): {ex.Message}");
+                                    if (retryCount < maxRetries)
+                                    {
+                                        Console.WriteLine("等待3秒后重试...");
+                                        System.Threading.Thread.Sleep(3000);
+                                    }
+                                }
+                            }
+                            
+                            if (!renameSuccess)
+                            {
+                                throw new Exception("多次尝试后仍然无法重命名文件夹");
+                            }
+                            
                             // 检查新文件夹中的文件数量
                             int newFileCount = Directory.GetFiles(newFolderPath, "*", SearchOption.AllDirectories).Length;
                             Console.WriteLine($"新文件夹中的文件数量: {newFileCount}");
