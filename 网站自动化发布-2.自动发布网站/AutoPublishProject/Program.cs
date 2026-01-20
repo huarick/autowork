@@ -48,6 +48,8 @@ namespace AutoPublishProject
                 RenameDeploymentFolder(svnVersion, maxScriptNumber);
 
                 Console.WriteLine("自动化发布流程执行完成！");
+                Console.WriteLine("请按任意键继续...");
+                Console.ReadKey();
             }
             catch (Exception ex)
             {
