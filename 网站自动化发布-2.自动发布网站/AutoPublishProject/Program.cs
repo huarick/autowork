@@ -6,6 +6,26 @@ using System.Threading.Tasks;
 
 namespace AutoPublishProject
 {
+    // 发布项目类
+    internal class PublishProject
+    {
+        // 发布的项目名
+        public string ProjectName { get; set; }
+        // 发布的项目路径
+        public string ProjectPath { get; set; }
+        // 发布配置路径
+        public string PublishProfilePath { get; set; }
+        // 发布的文件夹路径
+        public string PublishDir { get; set; }
+        // 是否网站项目（默认为是）
+        public bool IsWebProject { get; set; } = true;
+        
+        // 部署基础目录
+        public string DeploymentDir { get; set; }
+        // 解决方案名称
+        public string SolutionName { get; set; }
+    }
+    
     internal class Program
     {
         static void Main(string[] args)
@@ -24,28 +44,77 @@ namespace AutoPublishProject
             {
                 Console.WriteLine("开始执行自动化发布流程...");
 
-                // 1. 检查目录结构
+                // 0. 选择要发布的网站
+                int websiteChoice = 0;
+                while (websiteChoice != 1 && websiteChoice != 2)
+                {
+                    Console.WriteLine("请选择要发布的网站：");
+                    Console.WriteLine("1. D:\\QXYSVN\\trunk\\Qxy.PdmPortal 目录下的网站");
+                    Console.WriteLine("2. D:\\QXYSVN\\trunk\\Qxy.PlatformProductPortal 目录下的网站");
+                    Console.Write("请输入选择 (1 或 2): ");
+                    string input = Console.ReadLine();
+                    if (int.TryParse(input, out websiteChoice) && (websiteChoice == 1 || websiteChoice == 2))
+                    {
+                        break;
+                    }
+                    Console.WriteLine("输入无效，请重新输入！");
+                }
+
+                // 1. 实例化发布项目
+                PublishProject publishProject;
+                if (websiteChoice == 1)
+                {
+                    // 实例化PDM项目
+                    publishProject = new PublishProject
+                    {
+                        ProjectName = "PDM",
+                        ProjectPath = @"D:\QXYSVN\trunk\Qxy.PdmPortal\Qxy.Pdm.PortalWeb\Qxy.Pdm.PortalWeb.csproj",
+                        PublishProfilePath = @"d:\Rick\自动化项目\网站自动化发布-2.自动发布网站\TestPublishProfile.pubxml",
+                        PublishDir = @"D:\QXYSVN\trunk\deployment\Qxy.PdmPortalWeb_deploy\Deploy",
+                        DeploymentDir = @"D:\QXYSVN\trunk\deployment\Qxy.PdmPortalWeb_deploy",
+                        SolutionName = "Qxy.PdmPortal",
+                        IsWebProject = true
+                    };
+                    Console.WriteLine("您选择了发布PDM项目");
+                }
+                else
+                {
+                    // 实例化PlatformProduct项目
+                    publishProject = new PublishProject
+                    {
+                        ProjectName = "PlatformProduct",
+                        ProjectPath = @"D:\QXYSVN\trunk\Qxy.PlatformProductPortal\Qxy.PlatformProduct.PortalWeb\Qxy.PlatformProduct.PortalWeb.csproj",
+                        PublishProfilePath = @"d:\Rick\自动化项目\网站自动化发布-2.自动发布网站\TestPublishProfile.pubxml",
+                        PublishDir = @"D:\QXYSVN\trunk\deployment\Qxy.PlatformProductPortal\Deploy",
+                        DeploymentDir = @"D:\QXYSVN\trunk\deployment\Qxy.PlatformProductPortal",
+                        SolutionName = "Qxy.PlatformProductPortal",
+                        IsWebProject = true
+                    };
+                    Console.WriteLine("您选择了发布PlatformProduct项目");
+                }
+
+                // 2. 检查目录结构
                 CheckDirectories();
 
-                // 2. 获取SVN版本号
+                // 3. 获取SVN版本号
                 string svnVersion = GetSvnVersion();
                 Console.WriteLine($"SVN版本号: {svnVersion}");
 
-                // 3. 获取最大脚本编号
+                // 4. 获取最大脚本编号
                 string maxScriptNumber = GetMaxScriptNumber();
                 Console.WriteLine($"最大脚本编号: {maxScriptNumber}");
 
                 Console.WriteLine("=======================================");
                 Console.WriteLine("开始执行第1步: 发布网站");
                 Console.WriteLine("=======================================");
-                // 4. 发布网站
-                PublishWebsite();
+                // 5. 发布网站
+                PublishWebsite(publishProject);
 
                 Console.WriteLine("=======================================");
                 Console.WriteLine("开始执行第2步: 重命名文件夹");
                 Console.WriteLine("=======================================");
-                // 5. 重命名文件夹
-                RenameDeploymentFolder(svnVersion, maxScriptNumber);
+                // 6. 重命名文件夹
+                RenameDeploymentFolder(svnVersion, maxScriptNumber, publishProject);
 
                 Console.WriteLine("自动化发布流程执行完成！");
                 Console.WriteLine("请按任意键继续...");
@@ -391,12 +460,15 @@ namespace AutoPublishProject
             return maxNumber.ToString();
         }
 
-        static void PublishWebsite()
+        static void PublishWebsite(PublishProject publishProject)
         {
-            Console.WriteLine("开始构建和发布网站...");
+            Console.WriteLine($"开始构建和发布网站: {publishProject.ProjectName}...");
 
-            string projectPath = @"D:\QXYSVN\trunk\Qxy.PdmPortal\Qxy.Pdm.PortalWeb\Qxy.Pdm.PortalWeb.csproj";
-            string publishProfilePath = @"d:\Rick\自动化项目\网站自动化发布-2.自动发布网站\TestPublishProfile.pubxml";
+            // 使用发布项目实例的属性
+            string projectPath = publishProject.ProjectPath;
+            string publishProfilePath = publishProject.PublishProfilePath;
+            string publishDir = publishProject.PublishDir;
+            
             string msbuildPath = @"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe";
             bool hasError = false;
 
@@ -454,7 +526,6 @@ namespace AutoPublishProject
             try
             {
                 // 检查发布目录是否存在，如果不存在则创建
-                string publishDir = @"D:\QXYSVN\trunk\deployment\Qxy.PdmPortalWeb_deploy\Deploy";
                 if (!Directory.Exists(publishDir))
                 {
                     try
@@ -480,7 +551,7 @@ namespace AutoPublishProject
                     ProcessStartInfo psi = new ProcessStartInfo
                     {
                         FileName = msbuildPath,
-                        Arguments = $"\"{projectPath}\" /p:DeployOnBuild=true /p:PublishProfile=\"{publishProfilePath}\" /p:Configuration=Release",
+                        Arguments = $"\"{projectPath}\" /p:DeployOnBuild=true /p:PublishProfile=\"{publishProfilePath}\" /p:Configuration=Release /p:publishUrl=\"{publishDir}\"",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -562,16 +633,18 @@ namespace AutoPublishProject
             Console.WriteLine("=======================================");
         }
 
-        static void RenameDeploymentFolder(string svnVersion, string maxScriptNumber)
+        static void RenameDeploymentFolder(string svnVersion, string maxScriptNumber, PublishProject publishProject)
         {
             Console.WriteLine("========================================");
             Console.WriteLine("开始执行RenameDeploymentFolder方法...");
             Console.WriteLine("========================================");
 
-            string deploymentDir = @"D:\QXYSVN\trunk\deployment\Qxy.PdmPortalWeb_deploy";
-            string deployDir = Path.Combine(deploymentDir, "Deploy");
+            // 使用发布项目实例的属性
+            string deploymentDir = publishProject.DeploymentDir;
+            string solutionName = publishProject.SolutionName;
+            string deployDir = publishProject.PublishDir;
+            
             string currentDate = DateTime.Now.ToString("yyyyMMdd");
-            string solutionName = "Qxy.PdmPortal";
             string newFolderName = $"{currentDate}_{solutionName}_{svnVersion}_{maxScriptNumber}";
             string newFolderPath = Path.Combine(deploymentDir, newFolderName);
             bool hasError = false;
