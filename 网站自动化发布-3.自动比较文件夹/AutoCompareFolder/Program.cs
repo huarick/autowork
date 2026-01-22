@@ -7,9 +7,57 @@ namespace AutoCompareFolder {
     internal class Program {
         static void Main(string[] args) {
             try {
-                string sourceBasePath = "D:\\QXYSVN\\trunk\\deployment\\Qxy.PdmPortalWeb_deploy\\";
-                string targetBasePath = "D:\\RemoteFB\\FBpdm\\";
-                string beyondComparePath = "C:\\Program Files\\Beyond Compare 4\\BComp.exe";
+                string beyondComparePath = @"C:\Program Files\Beyond Compare 4\BComp.exe";
+
+                // 让用户选择要处理的网站
+                Console.WriteLine("请选择要处理的网站：");
+                Console.WriteLine("1. Qxy.PdmPortalWeb");
+                Console.WriteLine("2. Qxy.PlatformProductPortal");
+                Console.Write("请输入选项 (1 , 2 , 3)：");
+                string choice = Console.ReadLine();
+
+                // 根据用户选择实例化不同的项目
+                PublishProject project = null;
+                if (choice == "1") {
+                    project = new PublishProject {
+                        ProjectName = "Qxy.PdmPortalWeb",
+                        ProjectPath = @"D:\QXYSVN\trunk\Qxy.PdmPortalWeb",
+                        PublishConfigPath = @"D:\QXYSVN\trunk\Qxy.PdmPortalWeb\Properties\PublishProfiles",
+                        PublishFolderPath = @"D:\QXYSVN\trunk\deployment\Qxy.PdmPortalWeb_deploy",
+                        IsWebProject = true,
+                        RemoteFolderPath = @"D:\RemoteFB\FBpdm"
+                    };
+                } else if (choice == "2") {
+                    project = new PublishProject {
+                        ProjectName = "Qxy.PlatformProductPortal",
+                        ProjectPath = @"D:\QXYSVN\trunk\Qxy.PlatformProductPortal",
+                        PublishConfigPath = @"D:\QXYSVN\trunk\Qxy.PlatformProductPortal\Properties\PublishProfiles",
+                        PublishFolderPath = @"D:\QXYSVN\trunk\deployment\Qxy.PlatformProductPortal",
+                        IsWebProject = true,
+                        RemoteFolderPath = @"D:\RemoteFB\FBPlatfrmProduct"
+                    };
+                } else if (choice == "3") {
+                    project = new PublishProject {
+                        ProjectName = "PlatformSyn",
+                        ProjectPath = @"D:\QXYSVN\trunk\Qxy.SchedulingServer.PlatformSyn",
+                        PublishConfigPath = string.Empty,
+                        PublishFolderPath = @"D:\QXYSVN\trunk\Qxy.SchedulingServer.PlatformSyn\Qxy.SchedulingServer.PlatformSyn\bin\Debug",
+                        IsWebProject = true,
+                        RemoteFolderPath = @"D:\RemoteFB\FBPlatformSyn"
+                    };
+                } else {
+                    Console.WriteLine("错误：无效的选择，请输入 1 或 2 或3");
+                    return;
+                }
+
+                Console.WriteLine($"\n您选择了处理网站：{project.ProjectName}");
+                Console.WriteLine($"项目路径：{project.ProjectPath}");
+                Console.WriteLine($"发布文件夹路径：{project.PublishFolderPath}");
+                Console.WriteLine($"远程文件夹路径：{project.RemoteFolderPath}");
+                Console.WriteLine();
+
+                string sourceBasePath = project.PublishFolderPath;
+                string targetBasePath = project.RemoteFolderPath;
 
                 if (!Directory.Exists(sourceBasePath)) {
                     Console.WriteLine($"错误：源目录不存在 - {sourceBasePath}");
@@ -293,6 +341,27 @@ namespace AutoCompareFolder {
                 }
             }
         }
-
     }
+
+    // 发布项目类
+    public class PublishProject {
+        // 发布的项目名
+        public string ProjectName { get; set; }
+        
+        // 发布的项目路径
+        public string ProjectPath { get; set; }
+        
+        // 发布配置路径
+        public string PublishConfigPath { get; set; }
+        
+        // 发布的文件夹路径
+        public string PublishFolderPath { get; set; }
+        
+        // 是否网站项目（默认为是）
+        public bool IsWebProject { get; set; } = true;
+        
+        // 远程的文件夹路径
+        public string RemoteFolderPath { get; set; }
+    }
+
 }
